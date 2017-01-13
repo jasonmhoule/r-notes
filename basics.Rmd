@@ -15,12 +15,15 @@ output:
 
 <!--
 Finish data structures, including factors and strings
-- Start back at factors in Advanced R (and also leverage forcats)
-- Ensure to wrap up Attributes (dim and class)
-- Strings - all from tidyverse
-- Factors/forcats
-- Lubridate
 - Lists, etc. on down
+- Ensure to wrap up Attributes (dim and class) and missing values
+- Drive rest from datacamp (from "writing functions"), mixing in old notes and xrefing other materials where desired
+- Subsetting will be its own notebook to handle base/frames, dplyr/tibbles, data.tables, and perhaps some SQL or other frameworks
+- Strings - all from tidyverse (later)
+- Factors/forcats (later)
+- Lubridate (later)
+- tibble (later)
+- data.table (later)
 
 [Do a final compare here on vector creation basics.](https://campus.datacamp.com/courses/free-introduction-to-r/chapter-2-vectors-2?ex=1)
 
@@ -132,6 +135,18 @@ as.character(x)
 x <- c(FALSE, FALSE, TRUE)
 (y <- as.numeric(x))
 typeof(y)
+```
+
+#### Missing Values
+
+```{r}
+x1 <- NA
+is.na(x1)
+is.nan(x1) #FALSE - NA is not NaN
+class(x1) #NA values have a class
+x2 <- NaN
+is.nan(x2)
+is.na(x2) #TRUE - NaN is NA
 ```
 
 ### Attributes {.tabset .tabset-pills}
@@ -407,6 +422,8 @@ str_pad(112, width = 6, side = "left", pad = 0)
 
 #### Overview
 
+**How to summarize - count, table? Get from DSR**
+
 Hadley addresses factors both in [Advanced R](http://adv-r.had.co.nz/Data-structures.html#attributes) as well as using `forcats` in [R for Data Science](http://r4ds.had.co.nz/factors.html).
 
 Factors (and how they are set up) are important for many built-in statistics methods and functions. These are essentially *categories used to label observations* in a set of data. Factors are actually built on integer vectors, with the special attribute `levels` that assigns a string to each distinct category (integer).
@@ -416,12 +433,18 @@ Factors can be accidentally introduced in data loading. Character data is often 
 **Warning:**
 While factors look like character vectors, they are actually integers underneath. Different functions will handle them differently - either coercing to strings, throwing errors, or handling them as integers. **It’s usually best to explicitly convert factors to character vectors if you need string-like behaviour.**
 
-#### Basic factor handling
+```{r factor summary}
+x <- c(rep(c("lo","hi"),each=4),"mid")
+table(x)
+```
+
+#### Factor Creation
 
 `factor()` can encode a vector as a factor variable. The `levels` argument allows specification of the factors and their order; if this is not supplied, levels are assigned that cover all occurring values, ordered by the system (usually alphabetically). (Select values can be excluded by providing a vector to `exclude=`, and the factor levels can be re-ordered based on the vector using `forcats::fct_inorder`.) If levels are supplied, any values in the vector but not in the levels will become `<NA>` (which is excluded as a factor level by default; this can be changed, but should rarely be done). Factors can also be sorted on the order of their levels.
 
 ```{r factor() part 1}
 x <- c(rep(c("lo","hi"),each=2),"mid")
+table(x)
 (f <- factor(x))
 sort(f)
 library(forcats)
@@ -435,19 +458,35 @@ c(f,y)
 typeof(c(f,y))
 ```
 
-The `labels` argument allows for updating the factors themselves, using either a character vector (in the same order as the levels) or a single value that will be appended with a number appended based on the levels ordering.
+The `labels` argument allows for updating the factors themselves when creating a factor, using either a character vector (in the same order as the levels) or a single value that will be appended with a number appended based on the levels ordering.
 
 ```{r factor() part 2}
 (factor(x, labels = c("high","low","medium")))
 (factor(x, labels = "temp"))
 ```
 
+Finally, for creating simple patterned factors, `gl()` may be used. Its arguments are:
+
+- `n`, the number of levels
+- `k`, the number of replications of each level
+- `length`, the final length of the result (can be used to cause the output to loop)
+- `labels`, optional labels to be applied (default is sequential integers)
+- `ordered`, whether the factor is ordered
+
+```{r gl() for patterned factors}
+gl(2, 4, labels = c("Control", "Treat")) # First control, then treatment:
+gl(2, 1, 8) # 8 alternating 1s and 2s
+gl(2, 2, 8) # alternating pairs of 1s and 2s
+```
+
+#### Manipulating Levels
+
 A factor has attributes `class = "factor"` and `levels`, a character vector. `levels()` can be used to retrieve this vector or to relabel level values, either for the whole set (either with a vector ordered as the existing levels, or with a named list) or for a defined subset of levels.
 
 ```{r levels() part 1}
 attributes(f)
 levels(f)
-attr(f, "levels") # Same as above
+attr(f, "levels") # Same as previous
 (levels(f) <- c("high", "low", "medium"))
 (levels(f)[3] <- "middle")
 (levels(f) <- list("C" = "low", "A" = "high", "B" = "middle"))
@@ -464,6 +503,8 @@ Finally, `nlevels()` produces a count of the number of levels. `relevel(x, ref)`
 nlevels(f)
 relevel(f,"consonant")
 ```
+
+#### Factor Order
 
 Ordered factors differ from factors only in their class, but methods and the model-fitting functions treat the two classes quite differently. Providing the argument `ordered = TRUE` to `factor()` makes a factor ordered, and this can be checked with `is.ordered()` or coerced on a non-ordered factor with `as.ordered()`. Ordered factor level values may be compared with inequalities, where unordered factor levels may not.
 
@@ -487,20 +528,6 @@ boxplot(count ~ bymedian, data = InsectSprays,
         xlab = "Type of spray", ylab = "Insect count",
         main = "InsectSprays data", varwidth = TRUE,
         col = "lightgray")
-```
-
-Finally, for creating simple patterned factors, `gl()` may be used. Its arguments are:
-
-- `n`, the number of levels
-- `k`, the number of replications of each level
-- `length`, the final length of the result (can be used to cause the output to loop)
-- `labels`, optional labels to be applied (default is sequential integers)
-- `ordered`, whether the factor is ordered
-
-```{r gl() for patterned factors}
-gl(2, 4, labels = c("Control", "Treat")) # First control, then treatment:
-gl(2, 1, 8) # 8 alternating 1s and 2s
-gl(2, 2, 8) # alternating pairs of 1s and 2s
 ```
 
 ### Times and Dates?
@@ -563,10 +590,208 @@ now - my_time
 
 ## Lists {.tabset}
 
+Lists can contain elements of different classes
+```{r}
+x <- list(1,"a",TRUE,1+4i)
+print(x)
+```
+
+Can have names
+```{r}
+x <- list(a=1,b=2,c=3)
+x
+length(x)
+```
+
+Can concatenate with c
+```{r}
+y <- list(d=1,e=2,f=3)
+new <- c(x, y)
+new
+```
+
 ## Matrices {.tabset}
+
+[More](cran.r-project.org/doc/manuals/r-release/R-intro.html#Arrays-and-matrices)
+
+Matrices are vectors with a 'dim' attribute
+The dim attribute is itself an integer vector: (nrow, ncol)
+
+```{r}
+m <- matrix(nrow = 2, ncol =3)
+print(m)
+dim(m)
+attributes(m)
+```
+
+Matrices are constructed column-wise
+
+```{r}
+m  <- matrix(1:6, nrow = 2, ncol = 3)
+print(m)
+n <- matrix(1:6, nr = 3, byrow = T) #row-wise
+t(m)    #same (transpose m)
+```
+
+Can also be created directly from vectors using dim
+
+```{r}
+m <- 1:10
+print(m)
+dim(m) <- c(2,5)
+print(m)
+```
+
+Alternatively, using cbind or rbind
+
+```{r}
+x <- 1:3
+y <- 10:12
+cbind(x,y)
+rbind(x,y)
+```
+
+Can have names for rows, columns
+
+```{r}
+m <- matrix(1:4,nrow=2,ncol=2)
+dimnames(m) <- list(c("a","b"),c("c","d"))
+m
+```
+
+Matrix operations can be vectorized by element
+
+```{r}
+x <- matrix(1:4, 2, 2); y <- matrix(rep(10,4),2,2)
+x*y
+x/y
+```
+
+True matrix multiplication requires %*%
+
+```{r}
+x%*%y
+```
 
 ## Data Frames {.tabset}
 
-*Also check out tibbles (tidyverse)*
+### data.frame {.tabset .tabset-pills}
+
+Special type of list where each element has same length
+
+Each element is a column; lengths are # of rows
+
+Like lists, can store different classes by column
+
+Special attribute: row.names
+
+Usually called with read.table() or read.csv()
+
+Convert to matrix using data.matrix()
+
+```{r}
+x <- data.frame(foo=1:4, bar=c(T,T,F,F))
+x
+nrow(x)
+ncol(x)
+
+```
+
+### tibble {.tabset .tabset-pills}
+
+(tidyverse)
+
+### data.table {.tabset .tabset-pills}
+
+data.table
+
+```{r}
+library(data.table)
+DF <- data.frame(x=rnorm(9),
+                 y=rep(c("a","b","c"),each=3),
+                 z=rnorm(9))
+head(DF,3)
+DT <- data.table(x=rnorm(9),
+                 y=rep(c("a","b","c"),each=3),
+                 z=rnorm(9))
+head(DT,3)
+tables()
+```
+
+Subsetting rows - similar to data frames
+
+```{r}
+DT[2,]
+DT[DT$y=="a",]
+DT[c(2,3)]
+```
+
+Subsetting columns - different
+
+```{r}
+DT[,c(2,3)] #not desired result
+```
+
+Leading comma allows one to pass 'expressions'
+
+```{r}
+DT[,list(mean(x),sum(z))]
+DT[,table(y)]
+DT[,w:=z^2]
+DT2 <- DT
+DT[,y:=2]
+head(DT,n=3)
+head(DT2,n=3)
+```
+
+Multiple operations
+
+```{r}
+DT[,m:= {tmp <- (x+z); log2(tmp+5)}]
+DT[,a:=x>0]
+DT[,b:=mean(x+w),by=a] #conditioned on factor (a)
+```
+
+Special variable: .N is int len 1, containing number
+
+```{r}
+set.seed(123)
+DT <- data.table(x=sample(letters[1:3], 1E5, TRUE))
+DT[, .N, by=x]
+```
+
+Keys
+
+```{r}
+DT <- data.table(x=rep(c("a","b","c"),each=100),
+                 y=rnorm(300))
+setkey(DT,x)
+DT['a']
+```
+
+Joins (inner join here)
+
+```{r}
+DT1 <- data.table(x=c('a','a','b','dt1'),y=1:4)
+DT2 <- data.table(x=c('a','b','dt2'),z=5:7)
+setkey(DT1,x)
+setkey(DT2,x)
+merge(DT1,DT2)
+```
+
+Fast reading
+
+```{r}
+big_df <- data.frame(x=rnorm(1E6),y=rnorm(1E6))
+file <- tempfile()
+write.table(big_df,
+            file=file,
+            row.names=FALSE,
+            col.names=TRUE,
+            sep="\t",
+            quote=FALSE)
+system.time(fread(file)) # ~8x faster
+system.time(read.table(file,header=TRUE,sep="\t"))
+```
 
 ## Arrays {.tabset}
