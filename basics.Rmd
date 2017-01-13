@@ -1,0 +1,572 @@
+---
+output:
+  html_notebook:
+    toc: no
+    toc_depth: 3
+    toc_float: yes
+  html_document:
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: no
+---
+
+# Basic Data Structures {.tabset}
+
+<!--
+Finish data structures, including factors and strings
+- Start back at factors in Advanced R (and also leverage forcats)
+- Ensure to wrap up Attributes (dim and class)
+- Strings - all from tidyverse
+- Factors/forcats
+- Lubridate
+- Lists, etc. on down
+
+[Do a final compare here on vector creation basics.](https://campus.datacamp.com/courses/free-introduction-to-r/chapter-2-vectors-2?ex=1)
+
+Frame out the rest of the notes I'll take, attempt to align to learning paths and resources:
+- Get next files: C:\Users\jhoule\Google Drive\R Programming
+-->
+
+Credit for this content goes to the [Data Structures chapter in Advanced R](http://adv-r.had.co.nz/Data-structures.html).
+
+R uses the following basic structures for its data. Note that R has no 0-dimensional, or scalar types: individual numbers or strings are actually vectors of length one.
+
+|    | Homogeneous   | Heterogeneous |
+|----|---------------|---------------|
+| 1d | Atomic vector | List          |
+| 2d | Matrix        | Data frame    |
+| nd | Array         |               |
+
+## Atomic Vectors {.tabset}
+
+### Basic Types {.tabset .tabset-pills}
+
+#### Logical
+
+Logical operators will impute a logical type on the result of operations on numeric, integer, complex, or logical types.
+
+```{r Logical}
+str(TRUE)
+str(F)
+str(4 & TRUE)
+str(5L | 0)
+str(!0L)
+typeof(TRUE)
+```
+
+#### Integers
+
+Individual objects require suffix `L`.
+
+```{r Integer}
+str(9L)
+typeof(9L)
+```
+
+#### Doubles
+
+Real numbers. Note that complex numbers are also an atomic type, but aren't covered here.
+
+```{r Double}
+str(0.5)
+typeof(0.5)
+```
+
+#### Characters
+
+Character vectors have both type and class of `character`.
+
+```{r Character}
+str("a")
+typeof("a")
+```
+
+#### (Numerics)
+
+Numeric is not a *type*, it is a *class* that covers both integers and doubles. Somewhat confusingly, `str` on a double returns `num`.
+
+```{r Numeric}
+typeof(0.5)
+str(0.5)
+class(0.5)
+class(9L)
+is.numeric(9L)
+is.double(9L)
+```
+
+#### Coercion
+
+Coercion forces every element in vector to same class. This often happens automatically with mathematical or logical operators, which try to coerce to an appropriate type. It may also happen behind the scenes when concatenating vectors, in which case the resulting vector is the most-flexible type. Types from least to most flexible are (as above): logical, integer, double, and character.
+
+```{r Automatic coercion}
+str(1 | F)
+str(1L + T)
+str(1 + T)
+str(c("1",1))
+```
+
+Explicit coercion is possible using `as.*`
+
+```{r Explicit coercion}
+x <- 0:6
+class(x)
+as.double(x)
+as.logical(x)
+as.character(x)
+```
+
+If a nonsensical explicit coercion is attempted, `NA` is returned. The `NA` is of the coerced type (since atomic vectors are all of the same type.)
+
+```{r NAs from coercion}
+x <- c("a","b","c")
+(y <- as.double(x))
+typeof(y)
+as.logical(x)
+as.character(x)
+```
+
+`as.numeric()` will coerce to a double.
+
+```{r as.numeric()}
+x <- c(FALSE, FALSE, TRUE)
+(y <- as.numeric(x))
+typeof(y)
+```
+
+### Attributes {.tabset .tabset-pills}
+
+#### In general
+
+Most attributes are lost when modifying a vector, for more coverage review [here](http://adv-r.had.co.nz/Data-structures.html#attributes).
+
+Three attributes are retained, and these have special accessor functions to get and set values:
+
+- Names, `names()`
+- Dimensions, `dim()`
+- Class, `class()`
+
+`attributes()` can be used to view all of a vector's attributes (as a list). `attr()` can also take an argument of the attribute name to return the attribute itself. This method can (but should not) be used to set the attribute value as well.
+
+```{r attr()}
+x <- c(foo = 1, bar =2)
+attributes(x)
+attr(x, "names")
+attr(x, "dim")
+attr(x, "class")
+```
+
+#### `names()`
+
+You can name a vector in three ways:
+
+- When creating it: `x <- c(a = 1, b = 2, c = 3)`. (Note that quotes are not needed for single words, but must be used for any names with spaces included.)
+- By modifying an existing vector in place using `names()`: `x <- 1:3; names(x) <- c("a", "b", "c")`.
+- By creating a modified copy of a vector: `x <- setNames(1:3, c("a", "b", "c"))`.
+
+Names should be unique to best serve their purposes, but this is not required by the language.
+
+Not all elements of a vector need to have a name. If some names are missing, `names()` will return an empty string for those elements. If all names are missing, `names()` will return 'NULL'.
+
+```{r names()}
+y <- c(a = 1, 2, 3)
+names(y)
+
+z <- c(1, 2, 3)
+names(z)
+```
+
+You can create a new vector without names using unname(x), or remove names in place with names(x) <- NULL.
+
+
+
+
+#### `dim()`
+
+#### `class()`
+
+
+### Creating Vectors {.tabset .tabset-pills}
+
+#### Vector creation basics
+
+`vector()` creates an 'empty' vector using the empty value of whatever type is supplied.
+
+```{r Creating empty vectors}
+vector("numeric", length=10)
+vector("character", length=10)
+```
+
+The `c()` command creates vectors of objects of same class, or to concatenate other vectors together:
+
+```{r c() command}
+# Character vector
+c("a","b","c")
+c(x, 0, x)
+```
+
+The `:` command can be used as a shortcut to create sequences (subject to order of operations).
+
+```{r Vector creation shortcuts}
+29:23
+21:29-1
+21:(29-1)
+```
+
+#### `seq()`
+
+`seq()` and `rep()` can also be used to quickly create long vectors that can follow increasingly complex patterns. `seq()` is typically used as one of the following:
+
+- `seq(from, to)` generates a simple sequence, identical to `from:to`
+- `seq(from, to, by = )` generates the same, but provides the step (note that the step sign must be correct). Because of this, the endpoint may not equal (and if so will fall short of) `to`.
+- `seq(from, to, length.out = )` matches the `from` and `to` values and fills in equally-spaced values to create a vector of length `length.out`. The argument name can be shortened to `len` or `length`.
+- `seq(along.with = )`, `seq(from)`, and `seq(length.out = )` will all create a sequence from 1 to the number (or length of vector) supplied.
+- `seq(from, by =, along.with =)` can be used to create a vector `along` another vector that starts at `from` and counts `by` a step value.
+
+(Note that using `by` as a vector is possible but introduces very confusing element-wise computations.)
+
+```{r seq()}
+seq(8,3)
+seq(8,3,-2)
+seq(8,3,length.out = 5)
+seq(along.with = 8:3)
+seq(8:3)
+seq(length.out = 8)
+seq(10, by = 3, along = 1:4)
+```
+
+#### `rep()`
+
+`rep()` effectively takes the following arguments:
+
+- `times` is the default second argument but is effective *after* `each` is applied. If `times` is a single number (note that computed values are rounded down), the sequence will be repeated that number of times. If `times` is a vector (it must be the same length as `x` *after* applying `each`, if any), each element is replicated elementwise per the `times` vector.
+- `each` can be used to repeat each element in place a certain number of times (before `times` is applied).
+- `length.out` defines the final length and truncates or extends the repetition accordingly.
+
+```{r rep()}
+rep(1:3, 2)
+rep(1:3, c(2,1,5))
+rep(1:3, each = 2)
+rep(3:4, 2, each = 2)
+rep(1:3, length.out = 8)
+rep(1:3, each = 2, length.out = 5)
+```
+
+#### Vectorization
+
+Many R operations are vectorized, so vectors can be fed and a vector of pairwise results will be returned.
+
+```{r Vectorized operations}
+x <- 1:4; y <- 6:9
+x+y
+x>2
+x>=2
+y==8
+y!=8
+x*y
+x/y
+```
+
+Be careful to distinguish logical operators: single operators work elementwise, while double operators summarize the full vector result.
+
+```{r Logical operations on vectors}
+x <- c(T,F,F,T); y <- c(F,T,F,T)
+x & y
+x && y
+x | y
+x || y
+```
+
+If vectors of different lengths are passed, the shorter vector(s) will loop to satisfy maximum length.
+
+```{r Looping vectors}
+x <- paste(c("X","Y"),1:4,sep="."); x
+y <- paste(c("X","Y"),1:4,6:10,sep="."); y
+```
+
+### More On Strings {.tabset .tabset-pills}
+
+**Need to tear this all down (may save regex and grep/sub (?)) and base it on stringr for tidyverse.** Start [here](http://r4ds.had.co.nz/strings.html), and check against [stringr](http://stringr.tidyverse.org/) for depth if needed.
+
+#### Base R
+
+The base package includes functions for string manipulations. `paste()` converts vectors to characters and concatenates them element-wise, each separated by a `sep` sequence, defaulting to `' '`. The output vector itself can be concatenated together by specifying a separating `collapse` character. (`paste0()` does the same but with `sep=''`). `strsplit()` does the opposite and will split a vector into a list of vectors on a specified split character.
+
+```{r paste(), tolower(), strsplit()}
+x <- paste(c("X","Y"),1:4,sep=".")
+tolower(x)
+paste(x,collapse="|")
+strsplit(x,"\\.")
+```
+
+`tolower`, `chartr`
+
+```{r}
+str
+```
+
+`print`, `substr`, `cat`
+
+See `?chartr` for further base functions on character translation and casefolding.
+
+#### Regular Expressions
+
+Regular expressions (regex) are sequences of characters used for search patterns for matching strings. Basics are covered here, [more information on regular expressions is here](./regex.nb.html).
+
+#### Regex patterns
+
+Basic regex patterns are:
+
+- `^a`: Starts with `a`
+- `a$`: Ends with `a`
+- `a|i`: `a` or `i`
+- `[a-z]`: Any lowercase character
+- `[A-Za-z]`: Any uppercase or lowercase character
+- `[0-9]`: Any digit
+
+Wildcards and repeats
+
+- `.`: wildcard for any character
+- `.*`: repeats the wildcard zero or more times
+
+Escapes
+
+- `\\.`: Escapes and matches '.'
+- `\\s`: Escapes and matches ' ' (space)
+
+Groups
+
+- `([a-z])`: Captures a metacharacter/group
+- `\\1`: 'Backreference' used to later refer to the captured group, in order
+
+#### Search and replacement
+
+`grep` comes from Unix and stands for **g**lobal search **r**egular **e**xpression **p**rint. `grepl` produces a Boolean for matching a regex pattern in a character vector. `grep` returns the indices.
+
+```{r grep() and grepl()}
+kids <- c("Greg", "Jan", "Cindy", "Marcia", "Bobby", "Peter")
+grepl("a",kids)
+grep("e",kids)
+```
+
+`sub` and `gsub` are used for replacement. A regex `pattern` is replaced with a `replacement` value in `x`, a vector of strings to check against. `sub` only replaces the first instance of `pattern` found, while `gsub` works on all instances.
+
+```{r sub() and gsub()}
+kids <- c("Greg", "Jan", "Cindy", "Marcia", "Bobby", "Peter")
+sub(patt="a|e|i|o|u|y",repl="a",x=kids)
+gsub(patt="a|e|i|o|u|y",repl="i",x=kids)
+rpt <- c("Writing 5 reports tonight.",
+         "9 news is running a report...",
+         "We'll report on 5 findings.",
+         "3 reports issued earlier.")
+sub(".*([0-9]+)\\sreport.*$", "\\1", rpt)
+```
+
+#### String Distance: Fuzzy matching
+
+Use `adist()` to calculate approximate string distances for fuzzy matching (many other parameters can be fed to `adist` to customize its evaluations):
+
+```{r adist()}
+codes <- c("male","female")
+gender <- c("M","male","Female","fem.")
+D <- adist(gender, codes)
+colnames(D) <- codes; rownames(D) <- gender; D
+# Carry out the best match
+i <- apply(D, 1, which.min) # Applies which.min row-wise on D
+data.frame(rawtext=gender,coded=codes[i])
+```
+
+Alternatively, `agrep()` allows one to use distance in search. Compare the distance between a pattern and a vector to be searched for matches. (In computing distance, the vector elements will be searched for **substring** matches, not whole elements - this makes it unsuitable for e.g. the task above.) The search can be customized by providing costs or other parameters, often in a list to the argument `max.distance`. Other options like `value` and `ignore.case` help control the search and output value. Finally, `agrepl()` performs the same search, but returns a Boolean instead.
+
+```{r agrep()}
+agrep("lasy", "1 lazy 2")
+agrep("lasy", c(" 1 lazy 2", "1 lasy 2"), max = list(sub = 0))
+agrep("laysy", c("1 lazy", "1", "1 LAZY"), max = 2)
+agrep("laysy", c("1 lazy", "1", "1 LAZY"), max = 2, value = TRUE)
+agrep("laysy", c("1 lazy", "1", "1 LAZY"), max = 2, ignore.case = TRUE)
+agrepl("laysy", c("1 lazy", "1", "1 LAZY"), max = 2, ignore.case = TRUE)
+```
+
+See also the `stringdist` package for more string distance metrics.
+
+#### Other string packages
+
+**Really need to build out stringr here: tidyverse**
+
+Other string packages are also useful for basic string manipulation. More in-depth use is explored elsewhere.
+
+```{r Basic stringr use}
+library(stringr)
+str_trim("  hello world ")
+str_trim("  hello world ", side = "left")
+str_trim("  hello world ", side = "right")
+str_pad(112, width = 6, side = "left", pad = 0)
+```
+
+### Factors {.tabset .tabset-pills}
+
+#### Overview
+
+Hadley addresses factors both in [Advanced R](http://adv-r.had.co.nz/Data-structures.html#attributes) as well as using `forcats` in [R for Data Science](http://r4ds.had.co.nz/factors.html).
+
+Factors (and how they are set up) are important for many built-in statistics methods and functions. These are essentially *categories used to label observations* in a set of data. Factors are actually built on integer vectors, with the special attribute `levels` that assigns a string to each distinct category (integer).
+
+Factors can be accidentally introduced in data loading. Character data is often read in as factors, which can be controlled using the argument `stringsAsFactors`, which defaults to `TRUE`. Sometimes numeric data will also be read in as a factor, notably if there is a non-numeric value in the column, such as `-` to indicate missing values; this can often be controlled using an argument such as `na.strings` to the reading function.
+
+**Warning:**
+While factors look like character vectors, they are actually integers underneath. Different functions will handle them differently - either coercing to strings, throwing errors, or handling them as integers. **It’s usually best to explicitly convert factors to character vectors if you need string-like behaviour.**
+
+#### Basic factor handling
+
+`factor()` can encode a vector as a factor variable. The `levels` argument allows specification of the factors and their order; if this is not supplied, levels are assigned that cover all occurring values, ordered by the system (usually alphabetically). (Select values can be excluded by providing a vector to `exclude=`, and the factor levels can be re-ordered based on the vector using `forcats::fct_inorder`.) If levels are supplied, any values in the vector but not in the levels will become `<NA>` (which is excluded as a factor level by default; this can be changed, but should rarely be done). Factors can also be sorted on the order of their levels.
+
+```{r factor() part 1}
+x <- c(rep(c("lo","hi"),each=2),"mid")
+(f <- factor(x))
+sort(f)
+library(forcats)
+fct_inorder(f)
+# Note definition of "med" and not "mid"
+(y <- factor(x, levels = c("hi","med","lo")))
+# This operation is the same as factor()
+y[, drop = TRUE]
+# Factors cannot be meaningfully combined, they coerce back to an integer
+c(f,y)
+typeof(c(f,y))
+```
+
+The `labels` argument allows for updating the factors themselves, using either a character vector (in the same order as the levels) or a single value that will be appended with a number appended based on the levels ordering.
+
+```{r factor() part 2}
+(factor(x, labels = c("high","low","medium")))
+(factor(x, labels = "temp"))
+```
+
+A factor has attributes `class = "factor"` and `levels`, a character vector. `levels()` can be used to retrieve this vector or to relabel level values, either for the whole set (either with a vector ordered as the existing levels, or with a named list) or for a defined subset of levels.
+
+```{r levels() part 1}
+attributes(f)
+levels(f)
+attr(f, "levels") # Same as above
+(levels(f) <- c("high", "low", "medium"))
+(levels(f)[3] <- "middle")
+(levels(f) <- list("C" = "low", "A" = "high", "B" = "middle"))
+```
+
+Additional (empty) levels can also be defined with this method, and in a similar manner as relabeling, factor levels can be combined (and the total number of levels reduced). Use of lists for relabeling and/or combining factor levels will also reorder the new set of labels based on the list order.
+
+Finally, `nlevels()` produces a count of the number of levels. `relevel(x, ref)` can be used to move a particular `ref` level to the first position, and moves the other levels down in order, which can be useful for statistical methods.
+
+```{r levels() part 2}
+(levels(f) <- c("C","A","B","D"))
+(levels(f) <- list("vowel" = "A",
+                  "consonant" = c("B","C","D")))
+nlevels(f)
+relevel(f,"consonant")
+```
+
+Ordered factors differ from factors only in their class, but methods and the model-fitting functions treat the two classes quite differently. Providing the argument `ordered = TRUE` to `factor()` makes a factor ordered, and this can be checked with `is.ordered()` or coerced on a non-ordered factor with `as.ordered()`. Ordered factor level values may be compared with inequalities, where unordered factor levels may not.
+
+```{r ordered()}
+(fac <- factor(x))
+(ord <- factor(x, ordered = TRUE))
+class(fac)
+class(ord)
+is.ordered(fac)
+is.ordered(ord)
+as.ordered(fac)
+fac[1] > fac[3]
+ord[1] > ord[3]
+```
+
+`reorder(x, X, FUN)` can reorder a factor `x` (ordered or not) based on some function `FUN` that takes a vector and returns a scalar. Based on the levels of `x`, `reorder` takes each subset of `X` and then returns `x` but with the levels ordered in increasing value of the scalar returned by `FUN` on that level's subset in `X`. This can be helpful for data visualization. Modify `median` in the code below to choose different statistics for ordering the data:
+
+```{r reorder()}
+bymedian <- with(InsectSprays, reorder(spray, count, median))
+boxplot(count ~ bymedian, data = InsectSprays,
+        xlab = "Type of spray", ylab = "Insect count",
+        main = "InsectSprays data", varwidth = TRUE,
+        col = "lightgray")
+```
+
+Finally, for creating simple patterned factors, `gl()` may be used. Its arguments are:
+
+- `n`, the number of levels
+- `k`, the number of replications of each level
+- `length`, the final length of the result (can be used to cause the output to loop)
+- `labels`, optional labels to be applied (default is sequential integers)
+- `ordered`, whether the factor is ordered
+
+```{r gl() for patterned factors}
+gl(2, 4, labels = c("Control", "Treat")) # First control, then treatment:
+gl(2, 1, 8) # 8 alternating 1s and 2s
+gl(2, 2, 8) # alternating pairs of 1s and 2s
+```
+
+### Times and Dates?
+
+**Really need to build out lubridate here: tidyverse**
+
+**zoo and xts tutorial on DataCamp**
+
+Basic date control is covered below. Three other packages to review for creating and manipulating dates and times:
+
+- [`lubridate`](https://cran.r-project.org/web/packages/lubridate/vignettes/lubridate.html) is part of the tidyverse and simplifies parsing and extracting information from date and time objects, as well as manipulating time intervals.
+- [`zoo`](https://cran.r-project.org/web/packages/zoo/index.html) is focused on manipulating time series
+- [`xts`](https://cran.r-project.org/web/packages/xts/index.html) extends `zoo` for more uniform handling
+
+Date (`Date`) and time (`POSIXct`) objects can be instantiated from the internal system time.
+
+```{r System date and time}
+today <- Sys.Date()
+class(today)
+now <- Sys.time()
+class(now)
+```
+
+Date objects may also be coerced using `as.Date()`, using a standard format such as `%Y-%m-%d`, or by setting the `format` explicitly. Similarly, time objects may be coerced using `as.POSIXct()`. Date or time objects may be displayed as strings in a particular format using `format()`.
+
+- `%Y`: 4-digit year (1982)
+- `%y`: 2-digit year (82)
+- `%m`: 2-digit month (01)
+- `%d`: 2-digit day of the month (13)
+- `%A`: weekday (Wednesday)
+- `%a`: abbreviated weekday (Wed)
+- `%B`: month (January)
+- `%b`: abbreviated month (Jan)
+
+- `%H`: hours as a decimal number (00-23)
+- `%I`: hours as a decimal number (01-12)
+- `%M`: minutes as a decimal number
+- `%S`: seconds as a decimal number
+- `%T`: shorthand notation for the typical format %H:%M:%S
+- `%p`: AM/PM indicator
+
+```{r Entering dates and times}
+(my_date <- as.Date("1999-12-31"))
+class(my_date)
+(sec_date <- as.Date("1971-14-05", format = "%Y-%d-%m"))
+(my_time <- as.POSIXct("1971-05-14 11:25:15"))
+format(my_time, "%b %d, %Y")
+format(my_time, "%I:%M %p")
+```
+
+Dates and times may be added or subtracted. This results in a `difftime` object.
+
+```{r Manipulating dates and times}
+(my_date + 1)
+my_date - sec_date
+(my_time + 1)
+now - my_time
+```
+
+
+## Lists {.tabset}
+
+## Matrices {.tabset}
+
+## Data Frames {.tabset}
+
+*Also check out tibbles (tidyverse)*
+
+## Arrays {.tabset}
