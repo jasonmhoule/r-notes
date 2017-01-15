@@ -5,7 +5,7 @@ output:
     toc_depth: 3
     toc_float: yes
   html_document:
-    toc: yes
+    toc: no
     toc_depth: 3
     toc_float:
       collapsed: no
@@ -14,24 +14,19 @@ output:
 # Basic Data Structures {.tabset}
 
 <!--
-Finish data structures, including factors and strings
-- Lists, etc. on down
-- Ensure to wrap up Attributes (dim and class) and missing values
-- Drive rest from datacamp (from "writing functions"), mixing in old notes and xrefing other materials where desired
-- Subsetting will be its own notebook to handle base/frames, dplyr/tibbles, data.tables, and perhaps some SQL or other frameworks
-- Strings - all from tidyverse (later)
-- Factors/forcats (later)
-- Lubridate (later)
-- tibble (later)
-- data.table (later)
+- Drive rest following DSR, supplemented by datacamp (incl "writing functions"), mixing in old notes and xrefing other materials where desired
+ - Get next files: C:\Users\jhoule\Google Drive\R Programming
+- Subsetting will be its own notebook to handle base/frames, dplyr/tibbles, data.tables, matrices and perhaps some SQL or other frameworks
+  - Revisit Advanced R for this
+- Strings - all from tidyverse (later in DSR)
+- tibble (later in DSR)
+- Factors/forcats (later in DSR)
+- Lubridate (later in DSR)
+- data.table (later...)
 
-[Do a final compare here on vector creation basics.](https://campus.datacamp.com/courses/free-introduction-to-r/chapter-2-vectors-2?ex=1)
-
-Frame out the rest of the notes I'll take, attempt to align to learning paths and resources:
-- Get next files: C:\Users\jhoule\Google Drive\R Programming
 -->
 
-Credit for this content goes to the [Data Structures chapter in Advanced R](http://adv-r.had.co.nz/Data-structures.html).
+These notes cover some of the basic data structures in R and the tidyverse, augmented over time as my experience has grown. Please see credits for more information.
 
 R uses the following basic structures for its data. Note that R has no 0-dimensional, or scalar types: individual numbers or strings are actually vectors of length one.
 
@@ -106,7 +101,7 @@ Coercion forces every element in vector to same class. This often happens automa
 str(1 | F)
 str(1L + T)
 str(1 + T)
-str(c("1",1))
+str(c("1",seq(0,1,len=4)))
 ```
 
 Explicit coercion is possible using `as.*`
@@ -139,14 +134,35 @@ typeof(y)
 
 #### Missing Values
 
+R uses a few different symbols for missing values. Perhaps the most common is `NA`. This is a true 'missing value' indicator - some value belongs here, but for some reason it is not present. Its type is `logical`, but can also be coerced to any other atomic vector type.
+
 ```{r}
 x1 <- NA
 is.na(x1)
 is.nan(x1) #FALSE - NA is not NaN
+is.null(x1)
 class(x1) #NA values have a class
-x2 <- NaN
-is.nan(x2)
+```
+
+`NaN` is a mathematical term, commonly observed in division by zero. Notably, this also meets the definition of `NA`.
+
+```{r}
+x2 <- 0/0
+typeof(x2)
 is.na(x2) #TRUE - NaN is NA
+is.nan(x2)
+is.null(x2)
+```
+
+`NULL` indicates an empty set, without any type. Because of this, many functions will fail to evalute on it, returning an empty vector (though typed and not `NULL`).
+
+```{r}
+x3 <- NULL
+class(x3)
+is.na(x3)
+is.nan(x3)
+is.null(x3)
+c(1:3,x3,5:7)
 ```
 
 ### Attributes {.tabset .tabset-pills}
@@ -193,13 +209,25 @@ names(z)
 
 You can create a new vector without names using unname(x), or remove names in place with names(x) <- NULL.
 
-
-
-
 #### `dim()`
+
+Adding a `dim` attribute to an atomic vector (using `dim()`) modifies it to behave like a two-dimensional matrix or multi-dimensional array.
+
+```{r dim()}
+x <- 1:8
+dim(x) <- c(2,4)
+print(x)
+dim(x) <- c(2,2,2)
+print(x)
+```
+
+The `dim` vector specifies rows, then columns, and so on into higher dimensions. This is also the order in which values are filled in. Note that the new dimension **must** match the number of vector elements exactly.
 
 #### `class()`
 
+This is used to distinguish multi-dimensional types, since matrices and arrays are built on top of vectors, and data.frames are built on top of lists.
+
+Actual implementation is rather complicated and not import outside of OO context.
 
 ### Creating Vectors {.tabset .tabset-pills}
 
@@ -232,21 +260,35 @@ The `:` command can be used as a shortcut to create sequences (subject to order 
 
 `seq()` and `rep()` can also be used to quickly create long vectors that can follow increasingly complex patterns. `seq()` is typically used as one of the following:
 
-- `seq(from, to)` generates a simple sequence, identical to `from:to`
-- `seq(from, to, by = )` generates the same, but provides the step (note that the step sign must be correct). Because of this, the endpoint may not equal (and if so will fall short of) `to`.
-- `seq(from, to, length.out = )` matches the `from` and `to` values and fills in equally-spaced values to create a vector of length `length.out`. The argument name can be shortened to `len` or `length`.
-- `seq(along.with = )`, `seq(from)`, and `seq(length.out = )` will all create a sequence from 1 to the number (or length of vector) supplied.
-- `seq(from, by =, along.with =)` can be used to create a vector `along` another vector that starts at `from` and counts `by` a step value.
+`seq(from, to)` generates a simple sequence, identical to `from:to`
 
-(Note that using `by` as a vector is possible but introduces very confusing element-wise computations.)
-
-```{r seq()}
+```{r}
 seq(8,3)
+```
+
+`seq(from, to, by = )` generates the same, but provides the step (note that the step sign must be correct). Because of this, the endpoint may not equal (and if so will fall short of) `to`.
+
+```{r}
 seq(8,3,-2)
+```
+
+`seq(from, to, length.out = )` matches the `from` and `to` values and fills in equally-spaced values to create a vector of length `length.out`. The argument name can be shortened to `len` or `length`.
+
+```{r}
 seq(8,3,length.out = 5)
+```
+
+`seq(along.with = )`, `seq(from)`, and `seq(length.out = )` will all create a sequence from 1 to the number (or length of vector) supplied.
+
+```{r}
 seq(along.with = 8:3)
 seq(8:3)
 seq(length.out = 8)
+```
+
+`seq(from, by =, along.with =)` can be used to create a vector `along` another vector that starts at `from` and counts `by` a step value. (Note that using `by` as a vector is possible but introduces very confusing element-wise computations.)
+
+```{r}
 seq(10, by = 3, along = 1:4)
 ```
 
@@ -254,15 +296,23 @@ seq(10, by = 3, along = 1:4)
 
 `rep()` effectively takes the following arguments:
 
-- `times` is the default second argument but is effective *after* `each` is applied. If `times` is a single number (note that computed values are rounded down), the sequence will be repeated that number of times. If `times` is a vector (it must be the same length as `x` *after* applying `each`, if any), each element is replicated elementwise per the `times` vector.
-- `each` can be used to repeat each element in place a certain number of times (before `times` is applied).
-- `length.out` defines the final length and truncates or extends the repetition accordingly.
+`times` is the default second argument but is effective *after* `each` is applied. If `times` is a single number (note that computed values are rounded down), the sequence will be repeated that number of times. If `times` is a vector (it must be the same length as `x` *after* applying `each`, if any), each element is replicated elementwise per the `times` vector.
 
 ```{r rep()}
 rep(1:3, 2)
 rep(1:3, c(2,1,5))
+```
+
+`each` can be used to repeat each element in place a certain number of times (before `times` is applied).
+
+```{r}
 rep(1:3, each = 2)
 rep(3:4, 2, each = 2)
+```
+
+`length.out` defines the final length and truncates or extends the repetition accordingly.
+
+```{r}
 rep(1:3, length.out = 8)
 rep(1:3, each = 2, length.out = 5)
 ```
@@ -301,7 +351,9 @@ y <- paste(c("X","Y"),1:4,6:10,sep="."); y
 
 ### More On Strings {.tabset .tabset-pills}
 
-**Need to tear this all down (may save regex and grep/sub (?)) and base it on stringr for tidyverse.** Start [here](http://r4ds.had.co.nz/strings.html), and check against [stringr](http://stringr.tidyverse.org/) for depth if needed.
+**This is a work in progress. Need to build out stringr for tidyverse.**
+
+Start [here](http://r4ds.had.co.nz/strings.html), and check against [stringr](http://stringr.tidyverse.org/) for depth if needed.
 
 #### Base R
 
@@ -316,10 +368,6 @@ strsplit(x,"\\.")
 
 `tolower`, `chartr`
 
-```{r}
-str
-```
-
 `print`, `substr`, `cat`
 
 See `?chartr` for further base functions on character translation and casefolding.
@@ -329,6 +377,8 @@ See `?chartr` for further base functions on character translation and casefoldin
 Regular expressions (regex) are sequences of characters used for search patterns for matching strings. Basics are covered here, [more information on regular expressions is here](./regex.nb.html).
 
 #### Regex patterns
+
+**Put these in a table**
 
 Basic regex patterns are:
 
@@ -422,7 +472,7 @@ str_pad(112, width = 6, side = "left", pad = 0)
 
 #### Overview
 
-**How to summarize - count, table? Get from DSR**
+**Work in progress - need to build out forcats. How to summarize - count, table? Get from DSR**
 
 Hadley addresses factors both in [Advanced R](http://adv-r.had.co.nz/Data-structures.html#attributes) as well as using `forcats` in [R for Data Science](http://r4ds.had.co.nz/factors.html).
 
@@ -532,7 +582,7 @@ boxplot(count ~ bymedian, data = InsectSprays,
 
 ### Times and Dates?
 
-**Really need to build out lubridate here: tidyverse**
+**Work in progress - really need to build out lubridate here: tidyverse**
 
 **zoo and xts tutorial on DataCamp**
 
@@ -587,62 +637,71 @@ my_date - sec_date
 now - my_time
 ```
 
-
 ## Lists {.tabset}
 
-Lists can contain elements of different classes
-```{r}
-x <- list(1,"a",TRUE,1+4i)
-print(x)
+Unlike vectors, lists can contain elements of different classes, including vectors or other lists.
+
+```{r list()}
+z <- list(a = 1:3,b = "a",TRUE,1+4i,g = list(a = 1:4,b = "5"))
+str(z)
+length(z)
+typeof(z)
 ```
 
-Can have names
-```{r}
-x <- list(a=1,b=2,c=3)
-x
-length(x)
+Lists can be concatenated into a single list with `c()`. (Conversely, `list()` will keep each entry as its own list element in a new higher-level list.) If given a combination of atomic vectors and lists, `c()` will coerce the vectors to lists before concatenating them. Compare the results of `list()` and `c()`:
+
+```{r concatenating lists}
+x <- list(list(1, 2), c(3, 4))
+y <- c(list(1, 2), c(3, 4))
+str(x)
+str(y)
 ```
 
-Can concatenate with c
-```{r}
-y <- list(d=1,e=2,f=3)
-new <- c(x, y)
-new
+Lists are used to build other data structures, such as data frames and many function returns. Therefore `is.list()` is more expansive than may be desired. Use `as.list()` to coerce to a list, or `unlist()` to turn a list into a vector, with the same coercion rules as `c()`. Names are also translated as depicted.
+
+```{r unlist()}
+is.list(mtcars)
+str(as.list(1:3))
+unlist(z) #From above
 ```
 
-## Matrices {.tabset}
+## Matrices and Arrays {.tabset}
 
-[More](cran.r-project.org/doc/manuals/r-release/R-intro.html#Arrays-and-matrices)
+### Creation
 
-Matrices are vectors with a 'dim' attribute
-The dim attribute is itself an integer vector: (nrow, ncol)
+If needed, more thorough treatment is available in the [R intro manual chapter on arrays and matrices.](cran.r-project.org/doc/manuals/r-release/R-intro.html#Arrays-and-matrices)
+
+Matrices and arrays are vectors with a 'dim' attribute (an integer vector); matrices have two dimensions (`dim` length 2) and arrays have more than two. `matrix()` and `array()` may be used to construct (Vectors and lists can also be modified into matrices or arrays by setting `dim()`.)
 
 ```{r}
-m <- matrix(nrow = 2, ncol =3)
-print(m)
-dim(m)
+(m <- matrix(1:6, nrow = 2, ncol =3)) # Don't need to specify both of these
 attributes(m)
+(n <- array(1:16,c(2,4,2)))
 ```
 
-Matrices are constructed column-wise
+`as.matrix()` and `as.array()` also make it easy to turn an existing vector into a 1d matrix or array.
 
 ```{r}
-m  <- matrix(1:6, nrow = 2, ncol = 3)
-print(m)
-n <- matrix(1:6, nr = 3, byrow = T) #row-wise
-t(m)    #same (transpose m)
+v <- 1:3
+as.matrix(v)
+as.array(v)
 ```
 
-Can also be created directly from vectors using dim
+A `data.frame` can be converted to a matrix using `data.matrix()`.
 
 ```{r}
-m <- 1:10
-print(m)
-dim(m) <- c(2,5)
-print(m)
+df <- data.frame(a=1:4,b=8:5)
+str(df)
+str(data.matrix(df))
 ```
 
-Alternatively, using cbind or rbind
+As seen, matrices are constructed column-wise, unless specified using `byrow = TRUE`.
+
+```{r}
+(n <- matrix(1:6, nc = 3, byrow = T))
+```
+
+`c()` generalises to `cbind()` and `rbind()` for matrices, and to `abind()` (provided by the `abind` package) for arrays.
 
 ```{r}
 x <- 1:3
@@ -651,15 +710,27 @@ cbind(x,y)
 rbind(x,y)
 ```
 
-Can have names for rows, columns
+You can transpose a matrix with `t()`; the generalised equivalent for arrays is `aperm()`.
 
 ```{r}
-m <- matrix(1:4,nrow=2,ncol=2)
-dimnames(m) <- list(c("a","b"),c("c","d"))
-m
+t(n)
 ```
 
-Matrix operations can be vectorized by element
+### Basic Properties
+
+You can test if an object is a matrix or array using is.matrix() and is.array(), or by looking at the length of the dim().
+
+```{r}
+# Same matrices as used on other tabs
+m <- matrix(1:6, nrow = 2, ncol =3, dimnames = list(c("A","B"),c("a","b","c")))
+n <- array(1:16, dim = c(2,4,2))
+is.matrix(m)
+is.array(m)
+is.array(n)
+is.matrix(n)
+```
+
+Like vectors, matrix operations are vectorized by element.
 
 ```{r}
 x <- matrix(1:4, 2, 2); y <- matrix(rep(10,4),2,2)
@@ -667,43 +738,112 @@ x*y
 x/y
 ```
 
-True matrix multiplication requires %*%
+True matrix multiplication requires `%*%`.
 
 ```{r}
 x%*%y
+```
+
+### Attributes
+
+Attributes can be set by `matrix()` or `array()` at creation, or assigned to by name afterward.
+
+```{r}
+# Same matrices as used on other tabs
+m <- matrix(1:6, nrow = 2, ncol =3, dimnames = list(c("A","B"),c("a","b","c")))
+n <- array(1:16, dim = c(2,4,2))
+```
+
+`length()` generalizes to `nrow()` and `ncol()` for matrices, and simply `dim()` for arrays.
+
+```{r}
+length(m)
+nrow(m)
+ncol(m)
+dim(n)
+```
+
+`names()` generalizes to `rownames()` and `colnames()` for matrices, and to `dimnames()`, a list of character vectors, for arrays. (Note that `rownames` and `colnames` are **not** arguments to `matrix()`.)
+
+```{r}
+colnames(m)
+dimnames(n) <- list(c("one", "two"), c("a", "b", "c","d"), c("A", "B"))
+n
 ```
 
 ## Data Frames {.tabset}
 
 ### data.frame {.tabset .tabset-pills}
 
-Special type of list where each element has same length
+#### Intro
 
-Each element is a column; lengths are # of rows
+A data frame is a special type of list where each element is a vector of equal length. Thus each element (vector) is a column (each with its own data type) and vector lengths are # of rows.
 
-Like lists, can store different classes by column
+Notably, this means that the 'primary' dimension of a data.frame is its columns, which are the list elements. Therefore, `names()` is the same as `colnames()` and, perhaps counterintuitively, `length()` is `ncol()`.
 
-Special attribute: row.names
+#### Creation
 
-Usually called with read.table() or read.csv()
-
-Convert to matrix using data.matrix()
+`data.frame` takes named vectors as input. (Vector length is checked, but names will be imputed based on values if missing.)
 
 ```{r}
-x <- data.frame(foo=1:4, bar=c(T,T,F,F))
-x
+(x <- data.frame(1:4, bar=c(T,T,F,F), cat=c("a","b","c","d")))
 nrow(x)
 ncol(x)
+```
 
+Note above that the default behavior is to coerce strings to factors. Use stringAsFactors = FALSE to suppress this behavior.
+
+```{r}
+(x <- data.frame(1:4, bar=c(T,T,F,F), cat=c("a","b","c","d"), stringsAsFactors = FALSE))
+```
+
+A data frame may be coerced using `as.data.frame()`.
+
+- A vector will create a one-column data frame.
+- A list will create one column for each element; it’s an error if they’re not all the same length.
+- A matrix will create a data frame with the same number of columns and rows as the matrix.
+
+Combine data frames column-wise using `cbind()`. Number of rows must match, but row names are ignored. (Note that one argument to `cbind()` must already be a `data.frame`, or else a matrix will be returned; if binding vectors or lists, simply use `data.frame` directly.)
+
+```{r}
+cbind(x,x=1:4)
+```
+
+Combine data frames row-wise using `rbind()`. For this, both the number and names (order) of columns must match. This can present some difficulties so look for packages to help facilitate this type of combination.
+
+```{r}
+rbind(x,1:3)
+```
+
+#### Basic Properties
+
+A `data.frame` is a class, where `list` is the type:
+
+```{r}
+df <- data.frame()
+typeof(df)
+class(df)
+is.data.frame(df)
+```
+
+#### Attributes
+
+As rectangular data, a `data.frame` has `colnames()` and `rownames()` as well as `ncol()` and `nrow()`. Names may be set at creation (either by naming the column vectors or by providing `row.names=`) or after creation.
+
+```{r}
+x <- data.frame(value = seq(1,10,len=4), large = c(T,T,F,F), row.names = 1:4)
+nrow(x)
+colnames(x) <- c("A","B")
+x
 ```
 
 ### tibble {.tabset .tabset-pills}
 
-(tidyverse)
+**Work in progress, will revisit with tidyverse**
 
 ### data.table {.tabset .tabset-pills}
 
-data.table
+**Work in progress, will revisit later**
 
 ```{r}
 library(data.table)
@@ -794,4 +934,6 @@ system.time(fread(file)) # ~8x faster
 system.time(read.table(file,header=TRUE,sep="\t"))
 ```
 
-## Arrays {.tabset}
+## Credits
+
+These notes are accumulated from many sources, but is particularly is indebted to [Advanced R](http://adv-r.had.co.nz/Data-structures.html).
